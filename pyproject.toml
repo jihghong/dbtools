@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dbtools"
+version = "0.1.0"
+description = "Lightweight SQLite ORM helpers built on top of dataclasses."
+authors = [
+    { name = "John Lin" },
+    { name = "Codex" },
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["dbtools"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "dbtools",
+    "showcase",
+    "README.md",
+]
