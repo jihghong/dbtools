@@ -9,6 +9,7 @@ dbtools
 - Reuse table handles to avoid rebuilding SQL strings for chains of operations
 - Use query-by-example objects or raw SQL snippets for `WHERE` and `ORDER BY`
 - Bind multiple dataclasses to the same table to view the data from different angles
+- Persist nested dataclass references and list fields via an automatic `@@m2m_relations@@` table (objects hydrate on fetch; unused children are refcount-deleted)
 - Single-file implementation with zero third-party dependencies
 
 ## Installation
@@ -42,4 +43,4 @@ for account in table.orderby(balance='DESC').all():
     print(account)
 ```
 
-See `showcase/dbtools_DB.py` for a full walkthrough that covers compound unique keys, `bind`, flexible `where` clauses, and additional field types such as `datetime`.
+See `showcase/dbtools_DB.py` for a full walkthrough (unique keys, `bind`, flexible `where`), and `showcase/dbtools_DB_many.py` for nested objects, many-to-many lists, and refcounted deletes.
