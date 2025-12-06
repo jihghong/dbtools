@@ -1,0 +1,61 @@
+---- create table
+True
+True
+True
+True
+False
+CREATE TABLE A ([@@object_id@@] INTEGER PRIMARY KEY, a INTEGER, b TEXT, c REAL, UNIQUE (a))
+CREATE TABLE AA ([@@object_id@@] INTEGER PRIMARY KEY, a INTEGER, b TEXT, c REAL, UNIQUE (a, b))
+CREATE TABLE AAA ([@@object_id@@] INTEGER PRIMARY KEY, a INTEGER, b TEXT, c REAL)
+CREATE TABLE AAAA ([@@object_id@@] INTEGER PRIMARY KEY, a INTEGER, b TEXT, c REAL, UNIQUE (a), UNIQUE (b, c))
+---- put
+A(a=3, b='good', c=None)
+A(a=2, b='better', c=3.14)
+A(a=1, b='replaced', c=None)
+---- put unique=['a', ('b', 'c')]
+IntegrityError('UNIQUE constraint failed: AAAA.a')
+A(a=1, b='x', c=2.0)
+A(a=9, b='good', c=2.0)
+--- count
+3
+---- orderby
+A(a=3, b='good', c=None)
+A(a=2, b='better', c=3.14)
+A(a=1, b='replaced', c=None)
+A(a=1, b='replaced', c=None)
+---- where
+A(a=2, b='better', c=3.14)
+A(a=1, b='replaced', c=None)
+---- table='AA' different primary key
+A(a=1, b='good', c=None)
+A(a=2, b='better', c=3.14)
+A(a=1, b='best', c=None)
+A(a=3, b='good', c=1.414)
+---- bind B
+B(a=1, b='good', c=None)
+B(a=2, b='better', c=3.14)
+B(a=1, b='best', c=None)
+B(a=3, b='good', c=1.414)
+---- query by example
+A(a=2, b='better', c=3.14)
+None
+A(a=1, b='replaced', c=None)
+A(a=1, b='replaced', c=None)
+B(a=3, b='good', c=None)
+B(a=2, b='better', c=3.14)
+B(a=1, b='replaced', c=None)
+A(a=1, b='best', c=None)
+B(a=3, b='good', c=None)
+B(a=1, b='best', c=None)
+---- update by example
+A(a=3, b='the best', c=None)
+A(a=4, b='even better', c=None)
+A(a=1, b='modified', c=None)
+---- bind C
+C(a=1, b='best', d='from C')
+C(a=1, b='good', d='from C')
+C(a=2, b='better', d='from C')
+C(a=3, b='good', d='from C')
+---- supported types
+CREATE TABLE D ([@@object_id@@] INTEGER PRIMARY KEY, i INTEGER, f REAL, s TEXT, b BLOB, d DATE, t TIMESTAMP)
+D(i=4, f=3.14, s='good', b=b'good', d=datetime.date(2025, 9, 13), t=datetime.datetime(2025, 9, 13, 22, 15, 30, 123456)) <class 'int'> <class 'float'> <class 'str'> <class 'bytes'> <class 'datetime.date'> <class 'datetime.datetime'>
