@@ -29,7 +29,11 @@ class DB:
         return self.db.execute(*args, **kwargs)
 
     def table(self, ref, name: str = None):
-        if isinstance(ref, type) and dataclasses.is_dataclass(ref):
+        if _is_dataclass_instance(ref):
+            cls = ref.__class__
+            table_name = name or cls.__name__
+            self.classes[table_name] = cls
+        elif isinstance(ref, type) and dataclasses.is_dataclass(ref):
             table_name = name or ref.__name__
             self.classes[table_name] = ref
         return Table(self, ref, name=name)
@@ -45,6 +49,14 @@ class DB:
             "child_table TEXT, child_id INTEGER, "
             "PRIMARY KEY(parent_table, parent_id, field, child_table, child_id))"
         )
+
+    def _target_with_where(self, ref, table, where):
+        target = self.table(table or ref)
+        if _is_dataclass_instance(ref):
+            target = target.where(ref)
+        if _is_dataclass_instance(where):
+            target = target.where(where)
+        return target
 
     @staticmethod
     def sqlite3_type_mapping(type_):
@@ -81,12 +93,51 @@ class DB:
         elif isinstance(table, str): return table
         else: raise TypeError('table expects a class or table name (str)')
 
+    # Convenience APIs that delegate to Table
+    def create(self, ref, table: str = None, drop=False, unique=None):
+        return self.table(ref, name=table).create(unique=unique, drop=drop)
+
+    def bind(self, table, cls):
+        return self.table(table).bind(cls)
+
+    def put(self, obj, table: str = None, retrieve=False):
+        target = self.table(table or obj.__class__)
+        return target.put(obj, retrieve=retrieve)
+
+    def all(self, ref, table: str = None, where: str = None, orderby: str = None):
+        target = self._target_with_where(ref, table, where)
+        yield from target.all(where=where if isinstance(where, str) else None, orderby=orderby)
+
+    def get(self, ref, table: str = None, where: str = None, orderby: str = None):
+        target = self._target_with_where(ref, table, where)
+        return target.get(where=where if isinstance(where, str) else None, orderby=orderby)
+
+    def set(self, obj, table: str = None, where=None, retrieve=False):
+        target = self.table(table or obj.__class__)
+        if _is_dataclass_instance(where):
+            target = target.where(where)
+            where = None
+        return target.set(obj, where=where if isinstance(where, str) else None, retrieve=retrieve)
+
+    def count(self, table, where: str = None):
+        target = self.table(table)
+        return target.count(where=where)
+
+    def delete(self, obj=None, table: str = None, where: str = None):
+        ref = obj if obj is not None else table
+        target = self.table(table or (ref.__class__ if _is_dataclass_instance(ref) else ref))
+        if _is_dataclass_instance(where):
+            target = target.where(where)
+            where = None
+        return target.delete(obj=obj if _is_dataclass_instance(obj) else None, where=where if isinstance(where, str) else None)
+
 
 class Table:
     def __init__(self, db: DB, ref, name: str = None, where: str = None, orderby: str = None, cls=None, where_obj=None):
         self.db = db
         if name is None:
             if isinstance(ref, str): name = ref
+            elif _is_dataclass_instance(ref): name = ref.__class__.__name__
             else: name = ref.__name__
         self.name = name
         if cls is not None: self.cls = cls
@@ -418,8 +469,9 @@ class Table:
             if oid is None:
                 oid = self._find_object_id_by_fields(obj)
             if oid is not None: ids.append(oid)
-        if where:
-            ids.extend(r[0] for r in self.db.execute(f"SELECT [@@object_id@@] FROM {self.name}{self._render_where(where)}").fetchall())
+        where_clause = self._render_where(where)
+        if where_clause:
+            ids.extend(r[0] for r in self.db.execute(f"SELECT [@@object_id@@] FROM {self.name}{where_clause}").fetchall())
         if not ids and obj is None and where is None:
             return
         for oid in ids:

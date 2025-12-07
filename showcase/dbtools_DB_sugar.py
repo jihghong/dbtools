@@ -1,8 +1,9 @@
-from dbtools import ORM
+from dbtools import DB
 from dataclasses import dataclass
 import datetime
 
 print('---- create table')
+
 
 @dataclass
 class A:
@@ -10,7 +11,8 @@ class A:
     b: str = None
     c: float = None
 
-db = ORM(':memory:')
+
+db = DB(':memory:')
 db.create(A, unique='a')
 db.create(A, table='AA', unique=('a', 'b'))
 db.create(A, table='AAA')    # without any unique
@@ -62,11 +64,13 @@ for a in db.all('AA'): print(a)
 
 print('---- bind B')
 
+
 @dataclass
 class B:
     a: int = ...
     b: str = ...
     c: float = ...
+
 
 db.bind('AA', B)
 for b in db.all('AA'): print(b)
@@ -91,6 +95,7 @@ for a in db.all(A): print(a)
 
 print('---- bind C')
 
+
 @dataclass
 class C:
     a: int = 0
@@ -98,10 +103,12 @@ class C:
     # missing c
     d: str = 'from C'
 
+
 db.bind('AA', C)
 for c in db.all('AA'): print(c)
 
 print('---- supported types')
+
 
 @dataclass
 class D:
@@ -111,6 +118,7 @@ class D:
     b: bytes
     d: datetime.date = ...
     t: datetime.datetime = ...
+
 
 db.create(D)
 for sql, in db.execute("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'D'"): print(sql)

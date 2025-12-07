@@ -5,7 +5,7 @@ dbtools
 
 ## Features
 - Define schemas with dataclasses; field types automatically map to SQLite column types
-- Perform CRUD operations via fluent `table(...).create().put().where(...).orderby(...).all()/get()/set()/count()`
+- Perform CRUD operations via fluent `table(...).create().put().where(...).orderby(...).all()/get()/set()/count()` or direct `db.put(obj)` / `db.get(obj_or_cls, ...)` sugar
 - Reuse table handles to avoid rebuilding SQL strings for chains of operations
 - Use query-by-example objects or raw SQL snippets for `WHERE` and `ORDER BY`
 - Bind multiple dataclasses to the same table to view the data from different angles
@@ -43,4 +43,4 @@ for account in table.orderby(balance='DESC').all():
     print(account)
 ```
 
-See `showcase/dbtools_DB.py` for a full walkthrough (unique keys, `bind`, flexible `where`), and `showcase/dbtools_DB_many.py` for nested objects, many-to-many lists, and refcounted deletes.
+See `showcase/dbtools_DB_sugar.py` for the direct `db.put`/`db.get` style, `showcase/dbtools_DB.py` for the fluent table walkthrough (unique keys, `bind`, flexible `where`), and `showcase/dbtools_DB_many.py` for nested objects, many-to-many lists, and refcounted deletes.
