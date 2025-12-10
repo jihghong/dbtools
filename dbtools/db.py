@@ -25,6 +25,13 @@ class DB:
         self.db = sqlite3.connect(connect_string, detect_types=sqlite3.PARSE_DECLTYPES)
         self.classes = dict()
 
+    def __getattr__(self, name):
+        return getattr(self.db, name)
+
+    def autocommit(self, on=True):
+        self.db.isolation_level = None if on else 'DEFERRED'
+        return self
+
     def execute(self, *args, **kwargs):
         return self.db.execute(*args, **kwargs)
 
@@ -187,6 +194,7 @@ class Table:
         return self._schema_cache
 
     def create(self, unique=None, drop=False):
+        if not drop and self.exists(): return self
         if self.cls is None: raise TypeError('create expects a dataclass reference')
         primitives, relations = self._schema()
         columns = ['[@@object_id@@] INTEGER PRIMARY KEY']
