@@ -51,8 +51,15 @@ B(a=1, b='best', c=None)
 A(a=3, b='the best', c=None)
 A(a=4, b='even better', c=None)
 A(a=1, b='modified', c=None)
+---- delete
+after delete A(a=4):
+A(a=3, b='the best', c=None)
+A(a=1, b='modified', c=None)
+after delete where b='best' in AA:
+B(a=1, b='good', c=None)
+B(a=2, b='better', c=3.14)
+B(a=3, b='good', c=1.414)
 ---- bind C
-C(a=1, b='best', d='from C')
 C(a=1, b='good', d='from C')
 C(a=2, b='better', d='from C')
 C(a=3, b='good', d='from C')

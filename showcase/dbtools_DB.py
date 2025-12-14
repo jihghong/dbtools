@@ -72,6 +72,8 @@ class B:
 
 view_b = table_aa.bind(B)
 for b in view_b.all(): print(b)
+# keep a bound handle for later reads
+table_aa = table_aa.bind(B)
 
 print('---- query by example')
 
@@ -90,6 +92,18 @@ table_a.where(a=2).set(A(a=4, b='even better'))       # NOTE: this will SET c = 
 table_a.where(a=3).set(A(..., 'the best', ...))       # use ... for unchanged fields
 table_a.where(B(a=1)).set(B(b='modified'))
 for a in table_a.all(): print(a)
+
+print('---- delete')
+
+# delete by example object
+table_a.delete(A(a=4, b=..., c=...))
+print('after delete A(a=4):')
+for a in table_a.all(): print(a)
+
+# delete by where SQL
+table_aa.delete(where="b='best'")
+print("after delete where b='best' in AA:")
+for a in table_aa.all(): print(a)
 
 print('---- bind C')
 

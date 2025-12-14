@@ -331,8 +331,15 @@ class Table:
         if not fields:
             row = self.db.execute(f"SELECT [@@object_id@@] FROM {self.name} ORDER BY [@@object_id@@] DESC LIMIT 1").fetchone()
             return row[0] if row else None
-        condition = ' AND '.join(f"{f} = ?" for f in fields)
-        row = self.db.execute(f"SELECT [@@object_id@@] FROM {self.name} WHERE {condition} LIMIT 1", values).fetchone()
+        condition_parts, params = [], []
+        for f, v in zip(fields, values):
+            if v is None:
+                condition_parts.append(f"{f} IS NULL")
+            else:
+                condition_parts.append(f"{f} = ?")
+                params.append(v)
+        condition = ' AND '.join(condition_parts)
+        row = self.db.execute(f"SELECT [@@object_id@@] FROM {self.name} WHERE {condition} LIMIT 1", params).fetchone()
         return row[0] if row else None
 
     def _insert_or_update(self, fields, values):
@@ -355,11 +362,19 @@ class Table:
         if not fields:
             row = self.db.execute(f"SELECT [@@object_id@@] FROM {self.name} ORDER BY [@@object_id@@] DESC LIMIT 1").fetchone()
             return row[0] if row else None
-        condition = ' AND '.join(f"{f} = ?" for f in fields)
-        row = self.db.execute(f"SELECT [@@object_id@@] FROM {self.name} WHERE {condition} LIMIT 1", values).fetchone()
+        condition_parts, params = [], []
+        for f, v in zip(fields, values):
+            if v is None:
+                condition_parts.append(f"{f} IS NULL")
+            else:
+                condition_parts.append(f"{f} = ?")
+                params.append(v)
+        condition = ' AND '.join(condition_parts)
+        row = self.db.execute(f"SELECT [@@object_id@@] FROM {self.name} WHERE {condition} LIMIT 1", params).fetchone()
         return row[0] if row else None
 
     def _replace_relations(self, parent_id, rel_values, relations):
+        self.db._ensure_rel_table()
         for field_name, links in rel_values.items():
             self.db.execute(
                 "DELETE FROM [@@m2m_relations@@] WHERE parent_table = ? AND parent_id = ? AND field = ?",
@@ -396,6 +411,7 @@ class Table:
     def _hydrate_relations(self, obj, object_id):
         _, relations = self._schema()
         if not relations: return obj
+        self.db._ensure_rel_table()
         for field_name, (kind, child_cls) in relations.items():
             rows = self.db.execute(
                 "SELECT child_table, child_id FROM [@@m2m_relations@@] WHERE parent_table = ? AND parent_id = ? AND field = ? ORDER BY child_id",
@@ -486,6 +502,8 @@ class Table:
             self._delete_with_relations(oid)
 
     def _delete_with_relations(self, object_id):
+        # Ensure relation table exists even if no relations were previously created
+        self.db._ensure_rel_table()
         rel_rows = self.db.execute(
             "SELECT field, child_table, child_id FROM [@@m2m_relations@@] WHERE parent_table = ? AND parent_id = ?",
             (self.name, object_id),

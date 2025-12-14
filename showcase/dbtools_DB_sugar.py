@@ -93,6 +93,16 @@ db.set(A(..., 'the best', ...), where="a=3")       # use ... for unchanged field
 db.set(B(b='modified'), table='A', where=B(a=1))
 for a in db.all(A): print(a)
 
+print('---- delete')
+
+db.delete(A(a=4, b=..., c=...))
+print('after delete A(a=4):')
+for a in db.all(A): print(a)
+
+db.delete(table='AA', where="b='best'")
+print("after delete where b='best' in AA:")
+for a in db.all('AA'): print(a)
+
 print('---- bind C')
 
 
